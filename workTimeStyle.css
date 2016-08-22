@@ -1,0 +1,11 @@
+﻿tr.trTimeChecker.inProgress td {
+    background-color: rgba(255, 171, 64, 0.5);
+}
+
+tr.trTimeChecker.inProgress:hover td {
+    background-color: rgba(255, 171, 64, 1) !important;
+}
+
+tr.trTimeChecker td {
+    vertical-align: middle;
+}

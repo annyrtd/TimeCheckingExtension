@@ -1,0 +1,42 @@
+﻿{
+	"manifest_version": 2,
+	"name": "TimeChecker",
+	"version": "1.0",
+	"icons": {
+		"128": "images/tick.png"
+	},
+	"background" : {
+		"scripts" : ["background.js"]
+	},
+	"content_scripts": [
+		{
+			"matches": [ "http://co-msk-app02/*", "https://co-msk-app02/*" ],
+			"exclude_matches":
+			[
+				"http://co-msk-app02/Preferences/Edit*",
+				"https://co-msk-app02/Preferences/Edit*"
+			],
+			"css": [ "material.blue_grey-orange.min.css", "icon.css" ],
+			"js": [ "jquery.js", "material.min.js" ],
+			"run_at": "document_start"
+		},
+		{
+			"matches": [ "http://co-msk-app02/Personal*", "https://co-msk-app02/Personal*" ],
+			"js": [ "workTimeScript.js" ],
+			"css": [ "workTimeStyle.css" ]
+		}
+	],
+	
+	"permissions": [
+		"http://co-msk-app02/*"
+	],
+	
+	"web_accessible_resources": [
+		"images/*"
+	],
+	
+	"browser_action": {
+		"default_icon": "images/tick.png",
+		"default_title": "TimeChecker"
+    }	
+}
