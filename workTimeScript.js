@@ -280,8 +280,8 @@ function RecoundIds() {
 			$(this).attr('id', 'trTimeChecker' + rowsIndex);
 			$(this).attr('taskindex', rowsIndex);
 			var subtaskCount = $(this).attr('subtaskcount');
-			for (var i = 0; i < subtaskCount; i++) {
-				RecoundIdsForSubtasksRows(oldTaskIndex, rowsIndex);
+			for (var i = 1; i < subtaskCount; i++) {
+				RecoundIdsForSubtasksRows(+oldTaskIndex, +rowsIndex);
 			}			
 			
 			rowsIndex++;
@@ -294,7 +294,7 @@ function RecoundIds() {
 function RecoundIdsForSubtasksRows(taskIndex, newTaskIndex) {
 	subtaskIndex = 0;	
 	
-	var realIndex = newTaskIndex ? newTaskIndex : taskIndex;
+	var realIndex = (newTaskIndex === undefined) ? taskIndex : newTaskIndex;
 
 	$('[id^="trTimeChecker' + taskIndex + '"]').each(
 		function() {
@@ -325,12 +325,12 @@ function CheckRowsNumber(lastRowIndex) {
 	var isAnyInputHasVal = ($('#inputTask' + lastRowIndex).val() != '');
 	for (var i = 0; i < subtaskCount; i++) {
 		isAnyInputHasVal = isAnyInputHasVal 
-			|| $('#inputComment' + lastRowIndex + '-' + i).val() 
-			|| $('#inputTime' + lastRowIndex + '-' + i).val();
+			|| ($('#inputComment' + lastRowIndex + '-' + i).val() != '')
+			|| ($('#inputTime' + lastRowIndex + '-' + i).val() != '');
 	}
 	
-	if (isAnyInputHasVal && $('#trTimeChecker' + (lastRowIndex + 1)).length <= 0
-	) {		
+	if (isAnyInputHasVal && $('#trTimeChecker' + (lastRowIndex + 1)).length <= 0) 
+	{		
 		var selector = '#trTimeChecker' + lastRowIndex;
 		var lastSubtaskIndex = +$(selector).attr('subtaskcount') - 1;
 		if (lastSubtaskIndex != 0) {
@@ -345,8 +345,8 @@ function CheckRowsNumber(lastRowIndex) {
 			var isAnyInputHasValIndex = ($('#inputTask' + i).val() != '');
 			for (var j = 0; j < subtaskCount; j++) {
 				isAnyInputHasValIndex = isAnyInputHasValIndex 
-					|| $('#inputComment' + i + '-' + j).val() 
-					|| $('#inputTime' + i + '-' + j).val();
+					|| ($('#inputComment' + i + '-' + j).val()  != '')
+					|| ($('#inputTime' + i + '-' + j).val() != '');
 			}			
 			
 			if (!isAnyInputHasValIndex) {
@@ -361,14 +361,13 @@ function CheckRowsNumber(lastRowIndex) {
 function ShiftSubtask(taskIndex) {
 	var mainRow = $('#trTimeChecker' + taskIndex);
 	var subtaskCount = mainRow.attr('subtaskcount');
-	//mainRow.find('td.subtaskTd').empty();
 	var previousRow = mainRow;
 	
 	for (var i = 1; i < subtaskCount; i++) {
 		var currentRow = $('#trTimeChecker' + taskIndex + '-' + i);
 		var previousSubtaskTds = previousRow.find('td.subtaskTd');
 		currentRow.find('td.subtaskTd').each(function(index) {
-			$(previousSubtaskTds[index]).html($(this).html());
+			$(previousSubtaskTds[index]).children('input').val($(this).children('input').val());
 		})
 		
 		previousRow = currentRow;
@@ -379,7 +378,7 @@ function ShiftSubtask(taskIndex) {
 
 $(document).ready ( function() {
 	var rowsIndex = 0;
-	var firstRow = CreateEmptyTimeCheckingRow(rowsIndex);
+	var firstRow = CreateEmptyTimeCheckingRow(+rowsIndex);
 	$('table.full-size tr[id]').not('.future').last().after(firstRow);
 	
 	$(document).on('propertychange input change keyup paste click', '[idtype="inputTask"], [idtype="inputComment"], [idtype="inputTime"]',
