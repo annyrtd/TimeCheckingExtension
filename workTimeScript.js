@@ -1,4 +1,118 @@
-﻿function CreateEmptyTimeCheckingRow(taskIndex) {
+﻿/** функции подсчета времени **/
+function SumOfTime(time1, time2)
+{
+	if (time1.toString().indexOf("-") > -1 && time2.toString().indexOf("-") > -1)
+	{
+		return "-" + SumOfTime(time1.substr(1), time2.substr(1));
+	}
+	
+	if (time1.toString().indexOf("-") > -1)
+	{
+		return DifferenceOfTime(time2, time1.substr(1));		
+	}	
+	
+	if (time2.toString().indexOf("-") > -1)
+	{
+		return DifferenceOfTime(time1, time2.substr(1));		
+	}	
+	
+	// дальше считается для неотрицательных значений
+	var position1 = +time1.indexOf(":");
+	var position2 = +time2.indexOf(":");
+	var hours1 = +time1.substr(0, position1);
+	var hours2 = +time2.substr(0, position2);
+	var minutes1 = +time1.substr(position1 + 1);	
+	var minutes2 = +time2.substr(position2 + 1);
+	var sumHours = +(hours1 + hours2) + Math.floor((minutes1 + minutes2)/60);
+	var sumMinutes = +(minutes1 + minutes2) % 60;
+	return Pad(sumHours,2) + ":" + Pad(sumMinutes,2);
+}
+
+function Pad(num, size) 
+{
+    var s = num+"";
+    while (s.length < size) s = "0" + s;
+    return s;
+}
+
+function DifferenceOfTime(time1, time2)
+{
+	if (time1.toString().indexOf("-") > -1 && time2.toString().indexOf("-") > -1)
+	{
+		return DifferenceOfTime(time2.substr(1), time1.substr(1));
+	}
+	
+	if (time1.toString().indexOf("-") > -1)
+	{
+		return "-" + SumOfTime(time1.substr(1), time2);		
+	}	
+	
+	if (time2.toString().indexOf("-") > -1)
+	{
+		return SumOfTime(time1, time2.substr(1));		
+	}	
+	
+	// дальше считается для неотрицательных значений
+	var position1 = +time1.indexOf(":");
+	var position2 = +time2.indexOf(":");
+	var hours1 = +time1.substr(0, position1);
+	var hours2 = +time2.substr(0, position2);
+	var minutes1 = +time1.substr(position1 + 1);	
+	var minutes2 = +time2.substr(position2 + 1);
+	var differenceHours, differenceMinutes;
+	if (hours1 < hours2) /*!!!!! < or <= */
+	{
+		differenceHours = +(hours2 - hours1) + Math.floor((minutes2 - minutes1)/60);
+		differenceMinutes = +(minutes2 - minutes1);
+		if (minutes2 < minutes1)	
+		{			
+			differenceMinutes += 60;
+		}
+		if (differenceHours.toString().indexOf("-") > -1)
+		{
+			differenceHours = differenceHours.toString().substr(1);
+		}
+		else
+		{
+			if (!(differenceHours == 0 && differenceMinutes == 0))
+			{
+				differenceHours = "-" + differenceHours;
+			}
+		} 		
+	}
+	if (hours1 >= hours2)
+	{
+		if (hours1 > hours2)
+		{
+			differenceHours = +(hours1 - hours2) + Math.floor((minutes1 - minutes2)/60);
+			differenceMinutes = +(minutes1 - minutes2);
+			if (minutes1 < minutes2)
+			{				
+				differenceMinutes += 60;
+			}				
+		}
+		else
+		{
+			if (minutes1 >= minutes2)
+			{
+				differenceHours = "00";
+				differenceMinutes = +(minutes1 - minutes2);
+			}
+			else
+			{
+				differenceHours = "-0";
+				differenceMinutes = +(minutes2 - minutes1);
+			}
+		}
+	}
+	var ret = Pad(differenceHours,2) + ":" + Pad(differenceMinutes,2);
+	return ret;
+}
+/*******************************/
+
+
+
+function CreateEmptyTimeCheckingRow(taskIndex) {
 	
 	var inputTask = $('<input />', {
 		type: 'text',
@@ -15,6 +129,20 @@
 	.append(inputTask);
 	
 	
+	var tdStartTime = $('<td></td>', {
+		'class': 'startTime'
+	})
+	.css({
+		display: 'none'
+	});
+	
+	var tdFinishTime = $('<td></td>', {
+		'class': 'finishTime'
+	})
+	.css({
+		display: 'none'
+	});	
+	
 	
 	var inputTime = $('<input />', {
 		type: 'text',
@@ -26,14 +154,27 @@
 	});
 
 	
-	var iconTime = $('<i class="material-icons">play_arrow</i>');
+	var iconTimeStart = $('<i class="material-icons">play_arrow</i>');
 	
-	var buttonTime = $('<button></button>', {
+	var buttonTimeStart = $('<button></button>', {
 		'class': 'mdl-button mdl-js-button mdl-button--icon mdl-js-ripple-effect',		
-		idtype: 'buttonTime',
-		id: 'buttonTime' + taskIndex + '-0'
+		idtype: 'buttonTimeStart',
+		id: 'buttonTimeStart' + taskIndex + '-0'
 	})
-	.append(iconTime);
+	.append(iconTimeStart);
+	
+	var iconTimeStop = $('<i class="material-icons">stop</i>');
+	
+	var buttonTimeStop = $('<button></button>', {
+		'class': 'mdl-button mdl-js-button mdl-button--icon mdl-js-ripple-effect',		
+		idtype: 'buttonTimeStop',
+		id: 'buttonTimeStop' + taskIndex + '-0'
+	})
+	.css({
+		display: 'none'
+	})
+	.append(iconTimeStop);
+	
 	
 	var tdTime = $('<td></td>', {
 		'class': 'subtaskTd'
@@ -41,7 +182,7 @@
 	.css({
 		textAlign: 'center'
 	})
-	.append(inputTime, buttonTime);
+	.append(inputTime, buttonTimeStart, buttonTimeStop);
 	
 	
 	
@@ -107,46 +248,34 @@
 		taskindex: taskIndex,
 		id: 'trTimeChecker' + taskIndex
 	})
-	.append(tdTask, tdTime, tdComment, tdCloseSubtask, tdDeleteTask);	
+	.append(tdTask, tdStartTime, tdFinishTime, tdTime, tdComment, tdCloseSubtask, tdDeleteTask);	
 	
 	
 	
-	componentHandler.upgradeElement(buttonTime.get(0));
+	componentHandler.upgradeElement(buttonTimeStart.get(0));
 	componentHandler.upgradeElement(buttonCloseSubtask.get(0));
 	componentHandler.upgradeElement(buttonAddSubtask.get(0));
 	componentHandler.upgradeElement(buttonDeleteTask.get(0));
 	
 	return tr;
-	
-	
-	/*
-	<tr class="trTimeChecker" style="display: table-row;">
-		<td rowspan="2" colspan="2" >
-			<input type="text" style="width: 250px;" value="Best Buy Survey Development" />
-		</td>
-		<td style="text-align: center;">
-			<input type="text" style="width: 70px;" value="0:27" />
-			<i class="material-icons" style="font-size: 17px;">play_arrow</i>
-		</td>
-		
-		
-		<td colspan="2" class="time" >
-			<input type="text" style="width: 200px;" value="Meeting" />
-		</td>
-		<td class="time" style="display: none;"></td>
-		<td class="time" style="display: none;"></td>
-		<td class="time" style="display: none;"></td>
-		<td class="time" >
-			<i class="material-icons" >close</i>
-		</td>
-		<td >
-			<i class="material-icons">delete</i>
-		</td>
-	</tr>*/
 }
 
 function CreateSubtaskRow(taskIndex, subtaskIndex) {
-
+	var tdStartTime = $('<td></td>', {
+		'class': 'startTime'
+	})
+	.css({
+		display: 'none'
+	});
+	
+	var tdFinishTime = $('<td></td>', {
+		'class': 'finishTime'
+	})
+	.css({
+		display: 'none'
+	});	
+	
+	
 	var inputTime = $('<input />', {
 		type: 'text',
 		idtype: 'inputTime',
@@ -157,14 +286,26 @@ function CreateSubtaskRow(taskIndex, subtaskIndex) {
 	});
 
 	
-	var iconTime = $('<i class="material-icons">play_arrow</i>');
+	var iconTimeStart = $('<i class="material-icons">play_arrow</i>');
 	
-	var buttonTime = $('<button></button>', {
+	var buttonTimeStart = $('<button></button>', {
 		'class': 'mdl-button mdl-js-button mdl-button--icon mdl-js-ripple-effect',		
-		idtype: 'buttonTime',
-		id: 'buttonTime' + taskIndex + '-' + subtaskIndex
+		idtype: 'buttonTimeStart',
+		id: 'buttonTimeStart' + taskIndex + '-' + subtaskIndex
 	})
-	.append(iconTime);
+	.append(iconTimeStart);
+	
+	var iconTimeStop = $('<i class="material-icons">stop</i>');
+	
+	var buttonTimeStop = $('<button></button>', {
+		'class': 'mdl-button mdl-js-button mdl-button--icon mdl-js-ripple-effect',		
+		idtype: 'buttonTimeStop',
+		id: 'buttonTimeStop' + taskIndex + '-0'
+	})
+	.css({
+		display: 'none'
+	})
+	.append(iconTimeStop);
 	
 	var tdTime = $('<td></td>', {
 		'class': 'subtaskTd'
@@ -172,7 +313,7 @@ function CreateSubtaskRow(taskIndex, subtaskIndex) {
 	.css({
 		textAlign: 'center'
 	})
-	.append(inputTime, buttonTime);
+	.append(inputTime, buttonTimeStart, buttonTimeStop);
 	
 	
 	
@@ -224,11 +365,11 @@ function CreateSubtaskRow(taskIndex, subtaskIndex) {
 		subtaskIndex: subtaskIndex,
 		id: 'trTimeChecker' + taskIndex + '-' + subtaskIndex
 	})
-	.append(tdTime, tdComment, tdCloseSubtask);	
+	.append(tdStartTime, tdFinishTime, tdTime, tdComment, tdCloseSubtask);	
 	
 	
 	
-	componentHandler.upgradeElement(buttonTime.get(0));
+	componentHandler.upgradeElement(buttonTimeStart.get(0));
 	componentHandler.upgradeElement(buttonCloseSubtask.get(0));
 	componentHandler.upgradeElement(buttonAddSubtask.get(0));
 	
@@ -377,6 +518,8 @@ function ShiftSubtask(taskIndex) {
 }
 
 $(document).ready ( function() {
+	
+	
 	var rowsIndex = 0;
 	var firstRow = CreateEmptyTimeCheckingRow(+rowsIndex);
 	$('table.full-size tr[id]').not('.future').last().after(firstRow);
@@ -460,6 +603,47 @@ $(document).ready ( function() {
 			rowsIndex = CheckRowsNumber(rowsIndex);		
 			rowsIndex = RecoundIds();
 		}	
+	);
+	
+	$(document).on('click', '[idtype="buttonTimeStart"]', 
+		function() {
+					
+			
+			var currentDate = new Date();
+			var time = currentDate.getHours() + ":" + currentDate.getMinutes(); // + "." + currentDate.getSeconds();
+			
+			var mainRow = $(this).parent().parent();
+			mainRow.find('td.startTime').text(time);
+			
+			$(this).hide();
+			var stopId = '#' + $(this).attr('id').replace('Start', 'Stop');
+			$(stopId).show();	
+			mainRow.addClass('inProgress');
+		}
+	);
+	
+	$(document).on('click', '[idtype="buttonTimeStop"]', 
+		function() {
+			var currentDate = new Date();
+			var time = currentDate.getHours() + ":" + currentDate.getMinutes(); // + "." + currentDate.getSeconds();
+			
+			var mainRow = $(this).parent().parent();
+			mainRow.find('td.finishTime').text(time);
+			var input = mainRow.find('[idtype=inputTime]');
+			if (input.val()) {
+				input.val(SumOfTime(DifferenceOfTime(mainRow.find('td.finishTime').text(), mainRow.find('td.startTime').text()), input.val()));
+			} else {
+				input.val(DifferenceOfTime(mainRow.find('td.finishTime').text(), mainRow.find('td.startTime').text()));
+			}
+			
+			rowsIndex = CheckRowsNumber(rowsIndex);		
+			rowsIndex = RecoundIds();
+			
+			$(this).hide();
+			var startId = '#' + $(this).attr('id').replace('Stop', 'Start');
+			$(startId).show();
+			mainRow.removeClass('inProgress');
+		}
 	);
 	
 });
