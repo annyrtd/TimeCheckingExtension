@@ -1,11 +1,19 @@
-﻿tr.trTimeChecker.inProgress td {
-    background-color: rgba(255, 171, 64, 0.5);
+﻿tr.trTimeChecker.inProgress td.subtaskTd {
+    background-color: rgba(255, 171, 64, 0.3);
 }
 
-tr.trTimeChecker.inProgress:hover td {
-    background-color: rgba(255, 171, 64, 1) !important;
+tr.trTimeChecker.inProgress:hover td.subtaskTd {
+    background-color: rgba(255, 171, 64, 0.3) !important;
 }
 
 tr.trTimeChecker td {
     vertical-align: middle;
+}
+
+.mdl-layout__tab.is-active , .mdl-layout__tab {
+	color: black !important;
+}
+
+tr[id]:not(.future):not(.trTimeChecker) {
+	cursor: pointer;
 }

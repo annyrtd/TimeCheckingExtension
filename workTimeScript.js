@@ -1,4 +1,57 @@
-﻿/** функции подсчета времени **/
+﻿function CreateTimeTabs() {
+	
+	var a1 = $('<a href="#all-days" class="mdl-layout__tab is-active">Все дни</a>');
+	var a2 = $(' <a href="#current-day" class="mdl-layout__tab">Сегодня</a>');
+	
+	var tabDiv = $('<div></div>', {
+		'class': 'tabs'
+	})
+	.append(a1, a2);
+	
+	$('div.flexParent').attr('id', 'all-days').addClass('mdl-layout__tab-panel is-active');
+  
+	var content2 = $('<div></div>', {
+		'class': 'page-content'
+	})
+	.append('');
+	
+	var section2 = $('<section></section>', {
+		id: 'current-day',
+		'class': 'mdl-layout__tab-panel'
+	})
+	.append(content2);
+	
+	$('main span.mdl-layout-title')
+	.css({
+		display: 'flex',
+		alignItems: 'center',
+		minHeight: '65px'
+	})
+	.append('&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;')
+	.append(tabDiv);
+	$('main').append(section2);
+}
+
+function CreateCurrentDayButton() {
+	
+	var button = $('<button></button>', {
+		'class': 'mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect mdl-button--accent',
+		id: 'currentDayToggle'
+	}).append('Сегодня');
+	
+	$('main span.mdl-layout-title')
+	.css({
+		display: 'flex',
+		alignItems: 'center',
+		minHeight: '65px'
+	})
+	.append('&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;')
+	.append(button);
+	
+	componentHandler.upgradeElement(button.get(0));
+}
+
+/** функции подсчета времени **/
 function SumOfTime(time1, time2)
 {
 	if (time1.toString().indexOf("-") > -1 && time2.toString().indexOf("-") > -1)
@@ -110,14 +163,40 @@ function DifferenceOfTime(time1, time2)
 }
 /*******************************/
 
+function SetTableHeightForTime()
+{
+	var tbody = $("table.full-size tbody");
+	var height = $(window).height()
+		- $('header.mdl-layout__header').outerHeight(true)
+		- $('main.mdl-layout__content.content-wide span.mdl-layout-title').outerHeight(true)
+		- $('table.full-size thead').outerHeight(true)
+		- 50;
+
+	if (tbody.parent().outerWidth(true) + $('div.conclusion').outerWidth(true) > $('div.flexParent').width())
+	{
+		height = height - $('div.conclusion').outerHeight(true) - 45;
+	}
+	
+	//if (!isMonth)
+	//{
+	//	height = height - $('div.buttonDiv').outerHeight(true);
+	//}
+		
+	tbody.outerHeight(height);
+	
+	if (tbody.get(0).scrollHeight <= tbody.get(0).clientHeight)
+	{
+		tbody.css('height', 'auto');
+	}
+}
 
 
-function CreateEmptyTimeCheckingRow(taskIndex) {
+function CreateEmptyTimeCheckingRow(taskIndex, dayId) {
 	
 	var inputTask = $('<input />', {
 		type: 'text',
 		idtype: 'inputTask',
-		id: 'inputTask' + taskIndex
+		id: dayId + '_' + 'inputTask' + taskIndex
 	})
 	.css({
 		width: '250px'
@@ -147,7 +226,7 @@ function CreateEmptyTimeCheckingRow(taskIndex) {
 	var inputTime = $('<input />', {
 		type: 'text',
 		idtype: 'inputTime',
-		id: 'inputTime' + taskIndex + '-0'
+		id: dayId + '_' + 'inputTime' + taskIndex + '-0'
 	})
 	.css({
 		width: '70px'
@@ -159,7 +238,7 @@ function CreateEmptyTimeCheckingRow(taskIndex) {
 	var buttonTimeStart = $('<button></button>', {
 		'class': 'mdl-button mdl-js-button mdl-button--icon mdl-js-ripple-effect',		
 		idtype: 'buttonTimeStart',
-		id: 'buttonTimeStart' + taskIndex + '-0'
+		id: dayId + '_' + 'buttonTimeStart' + taskIndex + '-0'
 	})
 	.append(iconTimeStart);
 	
@@ -168,7 +247,7 @@ function CreateEmptyTimeCheckingRow(taskIndex) {
 	var buttonTimeStop = $('<button></button>', {
 		'class': 'mdl-button mdl-js-button mdl-button--icon mdl-js-ripple-effect',		
 		idtype: 'buttonTimeStop',
-		id: 'buttonTimeStop' + taskIndex + '-0'
+		id: dayId + '_' + 'buttonTimeStop' + taskIndex + '-0'
 	})
 	.css({
 		display: 'none'
@@ -189,7 +268,7 @@ function CreateEmptyTimeCheckingRow(taskIndex) {
 	var inputComment = $('<input />', {
 		type: 'text',
 		idtype: 'inputComment',
-		id: 'inputComment' + taskIndex + '-0'
+		id: dayId + '_' + 'inputComment' + taskIndex + '-0'
 	})
 	.css({
 		width: '200px'
@@ -200,7 +279,7 @@ function CreateEmptyTimeCheckingRow(taskIndex) {
 	var buttonAddSubtask = $('<button></button>', {
 		'class': 'mdl-button mdl-js-button mdl-button--icon mdl-js-ripple-effect mdl-button--accent',
 		idtype: 'buttonAddSubtask',
-		id: 'buttonAddSubtask' + taskIndex + '-0'
+		id: dayId + '_' + 'buttonAddSubtask' + taskIndex + '-0'
 	})
 	.append(iconAddSubtask);
 	
@@ -217,7 +296,7 @@ function CreateEmptyTimeCheckingRow(taskIndex) {
 	var buttonCloseSubtask = $('<button></button>', {
 		'class': 'mdl-button mdl-js-button mdl-button--icon mdl-js-ripple-effect',
 		idtype: 'buttonCloseSubtask',
-		id: 'buttonCloseSubtask' + taskIndex + '-0'
+		id: dayId + '_' + 'buttonCloseSubtask' + taskIndex + '-0'
 	})
 	.append(iconCloseSubtask);
 	
@@ -233,7 +312,7 @@ function CreateEmptyTimeCheckingRow(taskIndex) {
 	var buttonDeleteTask = $('<button></button>', {
 		'class': 'mdl-button mdl-js-button mdl-button--icon mdl-js-ripple-effect',
 		idtype: 'buttonDeleteTask',
-		id: 'buttonDeleteTask' + taskIndex
+		id: dayId + '_' + 'buttonDeleteTask' + taskIndex
 	})
 	.append(iconDeleteTask);
 	
@@ -244,9 +323,10 @@ function CreateEmptyTimeCheckingRow(taskIndex) {
 	var tr = $('<tr></tr>', {
 		'class': 'trTimeChecker task',
 		idtype: 'trTimeChecker',
+		dayid: dayId,
 		subtaskcount: 1,
 		taskindex: taskIndex,
-		id: 'trTimeChecker' + taskIndex
+		id: dayId + '_' + 'trTimeChecker' + taskIndex
 	})
 	.append(tdTask, tdStartTime, tdFinishTime, tdTime, tdComment, tdCloseSubtask, tdDeleteTask);	
 	
@@ -260,7 +340,7 @@ function CreateEmptyTimeCheckingRow(taskIndex) {
 	return tr;
 }
 
-function CreateSubtaskRow(taskIndex, subtaskIndex) {
+function CreateSubtaskRow(taskIndex, subtaskIndex, dayId) {
 	var tdStartTime = $('<td></td>', {
 		'class': 'startTime'
 	})
@@ -279,7 +359,7 @@ function CreateSubtaskRow(taskIndex, subtaskIndex) {
 	var inputTime = $('<input />', {
 		type: 'text',
 		idtype: 'inputTime',
-		id: 'inputTime' + taskIndex + '-' + subtaskIndex
+		id: dayId + '_' + 'inputTime' + taskIndex + '-' + subtaskIndex
 	})
 	.css({
 		width: '70px'
@@ -291,7 +371,7 @@ function CreateSubtaskRow(taskIndex, subtaskIndex) {
 	var buttonTimeStart = $('<button></button>', {
 		'class': 'mdl-button mdl-js-button mdl-button--icon mdl-js-ripple-effect',		
 		idtype: 'buttonTimeStart',
-		id: 'buttonTimeStart' + taskIndex + '-' + subtaskIndex
+		id: dayId + '_' + 'buttonTimeStart' + taskIndex + '-' + subtaskIndex
 	})
 	.append(iconTimeStart);
 	
@@ -300,7 +380,7 @@ function CreateSubtaskRow(taskIndex, subtaskIndex) {
 	var buttonTimeStop = $('<button></button>', {
 		'class': 'mdl-button mdl-js-button mdl-button--icon mdl-js-ripple-effect',		
 		idtype: 'buttonTimeStop',
-		id: 'buttonTimeStop' + taskIndex + '-0'
+		id: dayId + '_' + 'buttonTimeStop' + taskIndex + '-0'
 	})
 	.css({
 		display: 'none'
@@ -320,7 +400,7 @@ function CreateSubtaskRow(taskIndex, subtaskIndex) {
 	var inputComment = $('<input />', {
 		type: 'text',
 		idtype: 'inputComment',
-		id: 'inputComment' + taskIndex + '-' + subtaskIndex
+		id: dayId + '_' + 'inputComment' + taskIndex + '-' + subtaskIndex
 	})
 	.css({
 		width: '200px'
@@ -331,7 +411,7 @@ function CreateSubtaskRow(taskIndex, subtaskIndex) {
 	var buttonAddSubtask = $('<button></button>', {
 		'class': 'mdl-button mdl-js-button mdl-button--icon mdl-js-ripple-effect mdl-button--accent',
 		idtype: 'buttonAddSubtask',
-		id: 'buttonAddSubtask' + taskIndex + '-' + subtaskIndex
+		id: dayId + '_' + 'buttonAddSubtask' + taskIndex + '-' + subtaskIndex
 	})
 	.append(iconAddSubtask);
 	
@@ -348,7 +428,7 @@ function CreateSubtaskRow(taskIndex, subtaskIndex) {
 	var buttonCloseSubtask = $('<button></button>', {
 		'class': 'mdl-button mdl-js-button mdl-button--icon mdl-js-ripple-effect',
 		idtype: 'buttonCloseSubtask',
-		id: 'buttonCloseSubtask' + taskIndex + '-' + subtaskIndex
+		id: dayId + '_' + 'buttonCloseSubtask' + taskIndex + '-' + subtaskIndex
 	})
 	.append(iconCloseSubtask);
 	
@@ -361,9 +441,10 @@ function CreateSubtaskRow(taskIndex, subtaskIndex) {
 	var tr = $('<tr></tr>', {
 		'class': 'trTimeChecker subtask',
 		idtype: 'trTimeChecker',
+		dayid: dayId,
 		taskindex: taskIndex,
 		subtaskIndex: subtaskIndex,
-		id: 'trTimeChecker' + taskIndex + '-' + subtaskIndex
+		id: dayId + '_' + 'trTimeChecker' + taskIndex + '-' + subtaskIndex
 	})
 	.append(tdStartTime, tdFinishTime, tdTime, tdComment, tdCloseSubtask);	
 	
@@ -374,42 +455,18 @@ function CreateSubtaskRow(taskIndex, subtaskIndex) {
 	componentHandler.upgradeElement(buttonAddSubtask.get(0));
 	
 	return tr;
-	
-	
-	/*
-	<tr class="trTimeChecker" style="display: table-row;">
-		<td rowspan="2" colspan="2" >
-			<input type="text" style="width: 250px;" value="Best Buy Survey Development" />
-		</td>
-		<td style="text-align: center;">
-			<input type="text" style="width: 70px;" value="0:27" />
-			<i class="material-icons" style="font-size: 17px;">play_arrow</i>
-		</td>
-		
-		
-		<td colspan="2" class="time" >
-			<input type="text" style="width: 200px;" value="Meeting" />
-		</td>
-		<td class="time" style="display: none;"></td>
-		<td class="time" style="display: none;"></td>
-		<td class="time" style="display: none;"></td>
-		<td class="time" >
-			<i class="material-icons" >close</i>
-		</td>
-		<td >
-			<i class="material-icons">delete</i>
-		</td>
-	</tr>*/
 }
 
-function RecoundIds() {
+function RecoundIds(dayId) {
 	rowsIndex = 0;
 			
-	$('.task[idtype="trTimeChecker"]').each(
+	$('.task[idtype="trTimeChecker"][dayid=' + dayId + ']').each(
 		function() {
+			var dayId = $(this).attr('dayid');
+			
 			$(this).find('[idtype]').each(function() {
 				var idType = $(this).attr('idtype');
-				var id = idType + rowsIndex;
+				var id = dayId + '_' + idType + rowsIndex;
 				if ($(this).parent().hasClass('subtaskTd')) {
 					id += '-0';
 				}
@@ -418,11 +475,11 @@ function RecoundIds() {
 			
 			var oldTaskIndex = $(this).attr('taskindex');
 			
-			$(this).attr('id', 'trTimeChecker' + rowsIndex);
+			$(this).attr('id', dayId + '_' + 'trTimeChecker' + rowsIndex);
 			$(this).attr('taskindex', rowsIndex);
 			var subtaskCount = $(this).attr('subtaskcount');
 			for (var i = 1; i < subtaskCount; i++) {
-				RecoundIdsForSubtasksRows(+oldTaskIndex, +rowsIndex);
+				RecoundIdsForSubtasksRows(+oldTaskIndex, dayId, +rowsIndex );
 			}			
 			
 			rowsIndex++;
@@ -432,23 +489,23 @@ function RecoundIds() {
 	return --rowsIndex;
 }
 
-function RecoundIdsForSubtasksRows(taskIndex, newTaskIndex) {
+function RecoundIdsForSubtasksRows(taskIndex, dayId, newTaskIndex) {
 	subtaskIndex = 0;	
 	
 	var realIndex = (newTaskIndex === undefined) ? taskIndex : newTaskIndex;
 
-	$('[id^="trTimeChecker' + taskIndex + '"]').each(
+	$('[id^="' + dayId + '_' + 'trTimeChecker' + taskIndex + '"]').each(
 		function() {
 			$(this).find('.subtaskTd [idtype]').each(function() {
 				var idType = $(this).attr('idtype');
-				var id = idType + realIndex + '-' + subtaskIndex;
+				var id = dayId + '_' + idType + realIndex + '-' + subtaskIndex;
 				$(this).attr('id', id);					
 			});
 			
 			$(this).attr('taskindex', realIndex);
 			
 			if ($(this).hasClass('subtask')) {
-				$(this).attr('id', 'trTimeChecker' + realIndex + '-' + subtaskIndex);
+				$(this).attr('id', dayId + '_' + 'trTimeChecker' + realIndex + '-' + subtaskIndex);
 				$(this).attr('subtaskindex', subtaskIndex);
 			}
 			
@@ -459,39 +516,39 @@ function RecoundIdsForSubtasksRows(taskIndex, newTaskIndex) {
 	return subtaskIndex;
 }
 
-function CheckRowsNumber(lastRowIndex) {
-	var mainRow = $('#trTimeChecker' + lastRowIndex);
+function CheckRowsNumber(lastRowIndex, dayId) {
+	var mainRow = $('#' + dayId + '_' + 'trTimeChecker' + lastRowIndex);
 	var subtaskCount = mainRow.attr('subtaskcount');
 	
-	var isAnyInputHasVal = ($('#inputTask' + lastRowIndex).val() != '');
+	var isAnyInputHasVal = ($('#' + dayId + '_' + 'inputTask' + lastRowIndex).val() != '');
 	for (var i = 0; i < subtaskCount; i++) {
 		isAnyInputHasVal = isAnyInputHasVal 
-			|| ($('#inputComment' + lastRowIndex + '-' + i).val() != '')
-			|| ($('#inputTime' + lastRowIndex + '-' + i).val() != '');
+			|| ($('#' + dayId + '_' + 'inputComment' + lastRowIndex + '-' + i).val() != '')
+			|| ($('#' + dayId + '_' + 'inputTime' + lastRowIndex + '-' + i).val() != '');
 	}
 	
-	if (isAnyInputHasVal && $('#trTimeChecker' + (lastRowIndex + 1)).length <= 0) 
+	if (isAnyInputHasVal && $('#' + dayId + '_' + 'trTimeChecker' + (lastRowIndex + 1)).length <= 0) 
 	{		
-		var selector = '#trTimeChecker' + lastRowIndex;
+		var selector = '#' + dayId + '_' + 'trTimeChecker' + lastRowIndex;
 		var lastSubtaskIndex = +$(selector).attr('subtaskcount') - 1;
 		if (lastSubtaskIndex != 0) {
 			selector += '-' + lastSubtaskIndex;
 		}
-		$(selector).after(CreateEmptyTimeCheckingRow(++lastRowIndex));
+		$(selector).after(CreateEmptyTimeCheckingRow(++lastRowIndex, dayId));
 	} else {
 		for (var i = 0; i < lastRowIndex; i++) {
-			var currentRow = $('#trTimeChecker' + i);
+			var currentRow = $('#' + dayId + '_' + 'trTimeChecker' + i);
 			var subtaskCount = currentRow.attr('subtaskcount');
 	
-			var isAnyInputHasValIndex = ($('#inputTask' + i).val() != '');
+			var isAnyInputHasValIndex = ($('#' + dayId + '_' + 'inputTask' + i).val() != '');
 			for (var j = 0; j < subtaskCount; j++) {
 				isAnyInputHasValIndex = isAnyInputHasValIndex 
-					|| ($('#inputComment' + i + '-' + j).val()  != '')
-					|| ($('#inputTime' + i + '-' + j).val() != '');
+					|| ($('#' + dayId + '_' + 'inputComment' + i + '-' + j).val()  != '')
+					|| ($('#' + dayId + '_' + 'inputTime' + i + '-' + j).val() != '');
 			}			
 			
 			if (!isAnyInputHasValIndex) {
-				$('[idtype=trTimeChecker][taskindex=' + i + ']').remove();
+				$('[dayid=' + dayId + '][taskindex=' + i + ']').remove();
 			}				
 		}
 	}	
@@ -499,13 +556,13 @@ function CheckRowsNumber(lastRowIndex) {
 	return lastRowIndex;
 }
 
-function ShiftSubtask(taskIndex) {
-	var mainRow = $('#trTimeChecker' + taskIndex);
+function ShiftSubtask(taskIndex, dayId) {
+	var mainRow = $('#' + dayId + '_' + 'trTimeChecker' + taskIndex);
 	var subtaskCount = mainRow.attr('subtaskcount');
 	var previousRow = mainRow;
 	
 	for (var i = 1; i < subtaskCount; i++) {
-		var currentRow = $('#trTimeChecker' + taskIndex + '-' + i);
+		var currentRow = $('#' + dayId + '_' + 'trTimeChecker' + taskIndex + '-' + i);
 		var previousSubtaskTds = previousRow.find('td.subtaskTd');
 		currentRow.find('td.subtaskTd').each(function(index) {
 			$(previousSubtaskTds[index]).children('input').val($(this).children('input').val());
@@ -518,17 +575,40 @@ function ShiftSubtask(taskIndex) {
 }
 
 $(document).ready ( function() {
+
+	CreateCurrentDayButton();
 	
+	var rowsIndex = [];
 	
-	var rowsIndex = 0;
-	var firstRow = CreateEmptyTimeCheckingRow(+rowsIndex);
-	$('table.full-size tr[id]').not('.future').last().after(firstRow);
+	$('tr[id]:not(.future):not(.trTimeChecker)').each(function() {
+		var currentRow = $(this);
+		currentRow.addClass('timesheetCollapsed');
+		var dayId = currentRow.attr('id');
+		var index = 0;
+		currentRow.after(CreateEmptyTimeCheckingRow(index, dayId));
+		rowsIndex[dayId] = index;		
+	});
 	
-	$(document).on('propertychange input change keyup paste click', '[idtype="inputTask"], [idtype="inputComment"], [idtype="inputTime"]',
+	$('.trTimeChecker').hide();
+	
+	var currentDayId = $('tr[id]:not(.future):not(.trTimeChecker)').last().removeClass('timesheetCollapsed').attr('id');
+	
+	$('tr.intervalRow, tr[id]').hide();
+	$('#' + currentDayId + ', [dayid=' + currentDayId + ']').show();		
+	
+	SetTableHeightForTime();
+	
+	$(document).on('propertychange input change keyup paste', '[idtype="inputTask"], [idtype="inputComment"], [idtype="inputTime"]',
 		function() 
-		{	
-			rowsIndex = CheckRowsNumber(rowsIndex);		
-			rowsIndex = RecoundIds();
+		{
+			var mainTr = $(this).parent().parent();
+			var dayId = mainTr.attr('dayid');
+			console.log(rowsIndex);
+			console.log(rowsIndex[dayId]);
+			rowsIndex[dayId] = CheckRowsNumber(rowsIndex[dayId], dayId);		
+			rowsIndex[dayId] = RecoundIds(dayId);
+			
+			SetTableHeightForTime();
 		}
 	);
 	
@@ -536,59 +616,69 @@ $(document).ready ( function() {
 		function() {	
 
 			var mainTr = $(this).parent().parent();
-			$('.subtask[id^="' + mainTr.attr('idtype') + mainTr.attr('taskindex') + '"]').remove();
+			var dayId = mainTr.attr('dayid');
+			var idType = mainTr.attr('idtype');
+			var taskIndex = mainTr.attr('taskindex');
+			
+			$('.subtask[id^="' + dayId + '_' + idType + taskIndex + '"]').remove();
 			mainTr.find('[idtype="inputTask"], [idtype="inputComment"], [idtype="inputTime"]').val('');
 			
 			
-			if (rowsIndex == 0)
+			if (rowsIndex[dayId] == 0) {
+				SetTableHeightForTime();
 				return;
+			}
 			
 			mainTr.remove();
 			
-			rowsIndex = RecoundIds();			
-			rowsIndex = CheckRowsNumber(rowsIndex);	
+			rowsIndex[dayId] = RecoundIds(dayId);			
+			rowsIndex[dayId] = CheckRowsNumber(rowsIndex[dayId], dayId);
+
+			SetTableHeightForTime();
 		}	
 	);
 	
 	$(document).on('click', '[idtype="buttonAddSubtask"]', 
 		function() {
-			var indexes = $(this).attr('id').replace('buttonAddSubtask', '');
-			var taskStrIndex = indexes.indexOf('-');
-			var taskIndex = indexes.substr(0, taskStrIndex);
-			//var subtaskIndex = indexes.substr(taskStrIndex + 1);
-			
-			var mainRow = $('#trTimeChecker' + taskIndex);
-			var newSubtaskIndex = mainRow.attr('subtaskcount');
 			var tr = $(this).parent().parent();		
-			tr.after(CreateSubtaskRow(+taskIndex, +newSubtaskIndex));
+			var dayId = tr.attr('dayid');
+			var taskIndex = tr.attr('taskindex');
+			
+			var mainRow = $('#' + dayId + '_' + 'trTimeChecker' + taskIndex);
+			var newSubtaskIndex = mainRow.attr('subtaskcount');
+			
+			tr.after(CreateSubtaskRow(+taskIndex, +newSubtaskIndex, dayId));
 			
 			mainRow.attr('subtaskcount', +newSubtaskIndex + 1);
 			mainRow.children('td').first().attr('rowspan', +newSubtaskIndex + 1);			
 			mainRow.children('td').last().attr('rowspan', +newSubtaskIndex + 1);
 			
-			RecoundIdsForSubtasksRows(+taskIndex);
+			RecoundIdsForSubtasksRows(+taskIndex, dayId);
+			
+			SetTableHeightForTime();
 		}	
 	);
 	
 	$(document).on('click', '[idtype="buttonCloseSubtask"]', 
 		function() {
-			var indexes = $(this).attr('id').replace('buttonCloseSubtask', '');
-			var taskStrIndex = indexes.indexOf('-');
-			var taskIndex = indexes.substr(0, taskStrIndex);
-			
-			var mainRow = $('#trTimeChecker' + taskIndex);
 			var currentRow = $(this).parent().parent();
+			var dayId = currentRow.attr('dayid');
+			var taskIndex = currentRow.attr('taskindex');
+			
+			var mainRow = $('#' + dayId + '_' + 'trTimeChecker' + taskIndex);
+			
 			currentRow.find('[idtype="inputComment"], [idtype="inputTime"]').val("");
 			var subtaskCount = mainRow.attr('subtaskcount');
 			
 			if (subtaskCount == 1) {
-				rowsIndex = CheckRowsNumber(rowsIndex);		
-				rowsIndex = RecoundIds();
+				rowsIndex[dayId] = CheckRowsNumber(rowsIndex[dayId], dayId);		
+				rowsIndex[dayId] = RecoundIds(dayId);
+				SetTableHeightForTime();
 				return;
 			}
 			
-			if (currentRow.attr('id') == 'trTimeChecker' + taskIndex) {
-				ShiftSubtask(taskIndex);
+			if (currentRow.attr('id') == dayId + '_' + 'trTimeChecker' + taskIndex) {
+				ShiftSubtask(taskIndex, dayId);
 			} else {
 				currentRow.remove();	
 			}
@@ -598,17 +688,17 @@ $(document).ready ( function() {
 			mainRow.children('td').first().attr('rowspan', +subtaskCount - 1);			
 			mainRow.children('td').last().attr('rowspan', +subtaskCount - 1);
 						
-			RecoundIdsForSubtasksRows(+taskIndex);
+			RecoundIdsForSubtasksRows(+taskIndex, dayId);
 			
-			rowsIndex = CheckRowsNumber(rowsIndex);		
-			rowsIndex = RecoundIds();
+			rowsIndex[dayId] = CheckRowsNumber(rowsIndex[dayId], dayId);		
+			rowsIndex[dayId] = RecoundIds(dayId);
+			
+			SetTableHeightForTime();
 		}	
 	);
 	
 	$(document).on('click', '[idtype="buttonTimeStart"]', 
-		function() {
-					
-			
+		function() {			
 			var currentDate = new Date();
 			var time = currentDate.getHours() + ":" + currentDate.getMinutes(); // + "." + currentDate.getSeconds();
 			
@@ -618,7 +708,9 @@ $(document).ready ( function() {
 			$(this).hide();
 			var stopId = '#' + $(this).attr('id').replace('Start', 'Stop');
 			$(stopId).show();	
-			mainRow.addClass('inProgress');
+			mainRow.addClass('inProgress');			
+			
+			SetTableHeightForTime();
 		}
 	);
 	
@@ -628,6 +720,8 @@ $(document).ready ( function() {
 			var time = currentDate.getHours() + ":" + currentDate.getMinutes(); // + "." + currentDate.getSeconds();
 			
 			var mainRow = $(this).parent().parent();
+			var dayId = mainRow.attr('dayid');
+			
 			mainRow.find('td.finishTime').text(time);
 			var input = mainRow.find('[idtype=inputTime]');
 			if (input.val()) {
@@ -636,13 +730,51 @@ $(document).ready ( function() {
 				input.val(DifferenceOfTime(mainRow.find('td.finishTime').text(), mainRow.find('td.startTime').text()));
 			}
 			
-			rowsIndex = CheckRowsNumber(rowsIndex);		
-			rowsIndex = RecoundIds();
+			rowsIndex[dayId] = CheckRowsNumber(rowsIndex[dayId], dayId);		
+			rowsIndex[dayId] = RecoundIds(dayId);
 			
 			$(this).hide();
 			var startId = '#' + $(this).attr('id').replace('Stop', 'Start');
 			$(startId).show();
 			mainRow.removeClass('inProgress');
+			
+			SetTableHeightForTime();
+		}
+	);
+	
+	$(document).on('click', 'tr[id]:not(.future):not(.trTimeChecker)', 
+		function (){
+			var dayId = $(this).attr('id');
+			if ($(this).hasClass('timesheetCollapsed')) {
+				$('[dayid=' + dayId + ']').show();
+				$(this).removeClass('timesheetCollapsed');
+			} else {
+				$('[dayid=' + dayId + ']').hide();
+				$(this).addClass('timesheetCollapsed');
+			}
+			
+			SetTableHeightForTime();
+		}
+	);
+	
+	$(document).on('click', '#currentDayToggle', 
+		function (){
+			$('button.resetButton').click();
+			if ($(this).hasClass('mdl-button--accent')) {
+				$(this).removeClass('mdl-button--raised mdl-button--accent');
+				
+				$('tr.intervalRow, tr[id]').not('.future').not('.trTimeChecker').show();
+				$('.trTimeChecker').hide();
+				
+			} else {
+				$(this).addClass('mdl-button--raised mdl-button--accent');
+				var dayId = $('tr[id]:not(.future):not(.trTimeChecker)').last().attr('id');
+				
+				$('tr.intervalRow, tr[id]').hide();
+				$('#' + dayId + ', [dayid=' + dayId + ']').show();			
+			}
+			
+			SetTableHeightForTime();
 		}
 	);
 	
