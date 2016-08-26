@@ -1,4 +1,12 @@
-﻿tr.trTimeChecker.inProgress td.subtaskTd {
+﻿/*tr.trTimeChecker td, tr.other td{
+	background-color: rgba(96, 125, 139, 0.05);
+}
+
+tr.trTimeChecker:hover td, tr.other:hover td{
+	background-color: rgba(96, 125, 139, 0.05) !important;
+}*/
+
+tr.trTimeChecker.inProgress td.subtaskTd {
     background-color: rgba(255, 171, 64, 0.3);
 }
 
@@ -14,6 +22,10 @@ tr.trTimeChecker td {
 	color: black !important;
 }
 
-tr[id]:not(.future):not(.trTimeChecker) {
+tr[id]:not(.future):not(.trTimeChecker):not(.other) {
 	cursor: pointer;
+}
+
+tr input {
+	cursor: text !important;
 }
