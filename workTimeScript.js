@@ -19,82 +19,34 @@
 
 function SetUpInitialState() {
 	var rowsIndex = [];
+	var prefix = GetCurrentMonthAndYearPrefix();
+
+	var date = new Date();
+	var month = date.getMonth() + 1;
+	var year = date.getFullYear();
 	
+	var currentPeriod = month + '_' + year;
+	var storagePeriod = localStorage['currentPeriod'];
+	if (storagePeriod) {
+		if (storagePeriod != currentPeriod) {
+			ShiftLocalStorageData(storagePeriod);
+			localStorage['currentPeriod'] = currentPeriod;
+		}
+	} else {
+		localStorage['currentPeriod'] = currentPeriod;
+	}
+
+
 	$('tr[id]:not(.future):not(.trTimeChecker):not(.other):not(.header)').each(
 		function() {
-			var currentRow = $(this);
-			var dayId = currentRow.attr('id');
-			
-			var index = 0;
-			var tempMainRow, tempSubtaskRow, startTime;
-
-			var headerRow = CreateHeaderRow(dayId);
-			currentRow.after(headerRow);
-
-			var previous = headerRow;
-			
-			if (localStorage[dayId]) {
-				index = localStorage[dayId];
-				for(var i = 0; i < index; i++) {
-					tempMainRow = CreateTimeCheckerRow(dayId, i);
-					//tempMainRow = CreateEmptyTimeCheckingRow(i, dayId);
-
-					tempMainRow.find('[idtype="inputTask"], [idtype="inputComment"], [idtype="inputTime"]').each(function(){
-						var self = $(this);
-						var id = self.attr('id');
-						if (localStorage[id]) {
-							self.val(localStorage[id]);
-						}
-					});
-
-					startTime = localStorage[dayId + '_startTime' + i + '-0'];
-
-					if (startTime) {
-						SetUp_StartTime(tempMainRow, startTime);
-					}
-
-					previous.after(tempMainRow);
-					previous = tempMainRow;
-
-					if (localStorage[dayId + '_' + i]) {
-						var subtaskCount = +localStorage[dayId + '_' + i];
-						for(var j = 1; j < subtaskCount; j++) {
-							tempSubtaskRow = CreateTimeCheckerRow(dayId, i, j);
-							//tempSubtaskRow = CreateSubtaskRow(i, j, dayId);
-
-							tempSubtaskRow.find('[idtype="inputTask"], [idtype="inputComment"], [idtype="inputTime"]').each(function(){
-								var self = $(this);
-								var id = self.attr('id');
-								if (localStorage[id]) {
-									self.val(localStorage[id]);
-								}
-							});
-
-							startTime = localStorage[dayId + '_startTime' + i + '-' + j];
-
-							if (startTime) {
-								SetUp_StartTime(tempSubtaskRow, startTime);
-							}
-
-							previous.after(tempSubtaskRow);
-							previous = tempSubtaskRow;
-						}
-						tempMainRow.attr('subtaskcount', subtaskCount);
-						tempMainRow.children('td').first().attr('rowspan', subtaskCount);
-						tempMainRow.children('td').last().attr('rowspan', subtaskCount);
-					}
-				}
+			var dayId = $(this).attr('id');
+			var index = SetUpDay($(this), prefix);
+			rowsIndex[prefix + dayId] = index;
+			if (index) {
+				localStorage[prefix + dayId] = index;
+			} else {
+				localStorage.removeItem(prefix + dayId);
 			}
-			var emptyRow = CreateTimeCheckerRow(dayId, index);
-			//var emptyRow = CreateEmptyTimeCheckingRow(index, dayId);
-			localStorage.removeItem(dayId + '_' + index);
-
-			previous.after(emptyRow);
-			var otherRow = CreateOtherRow(dayId);
-			emptyRow.after(otherRow);
-
-			rowsIndex[dayId] = index;
-			localStorage[dayId] = index;
 		}
 	);
 
@@ -103,9 +55,128 @@ function SetUpInitialState() {
 	var currentDayId = GetCurrentDayId();
 
 	$('tr.intervalRow, tr[id]').hide();
+	$('#' + currentDayId).addClass('timesheetOpened');
 	$('#' + currentDayId + ', [dayid=' + currentDayId + ']').show();
 
 	return rowsIndex;
+}
+
+/**
+ * @return {string}
+ */
+function GetCurrentMonthAndYearPrefix() {
+	var search = window.location.search;
+	var objURL = {};
+
+	search.replace(
+		new RegExp( "([^?=&]+)(=([^&]*))?", "g" ),
+		function( $0, $1, $2, $3 ){
+			objURL[ $1 ] = $3;
+		}
+	);
+
+	var date = objURL.date;
+	var realDate = new Date();
+	var month = realDate.getMonth() + 1;
+	var year = realDate.getFullYear();
+	var dateStr = month + '.' + year;
+
+	if (!date || date == dateStr) {
+		return '';
+	} else {
+		return date.replace('.', '_') + '_';
+	}
+
+}
+
+function ShiftLocalStorageData(storagePeriod) {
+	Object.keys(localStorage)
+		.forEach(
+			function(key){
+				if(key.startsWith('day_')) {
+					localStorage[storagePeriod + '_' + key] = localStorage[key];
+					localStorage.removeItem(key);
+				} else {
+					if (localStorage.includes('day_')) {
+						localStorage.removeItem(key);
+					}
+				}
+			}
+		);
+}
+
+function SetUpDay(currentRow, prefix) {
+	var dayId = currentRow.attr('id');
+
+	var index = 0;
+	var tempMainRow, tempSubtaskRow, startTime;
+
+	var headerRow = CreateHeaderRow(dayId, prefix);
+	currentRow.after(headerRow);
+
+	var previous = headerRow;
+
+	if (localStorage[prefix + dayId]) {
+		index = localStorage[prefix + dayId];
+		for(var i = 0; i < index; i++) {
+			tempMainRow = CreateTimeCheckerRow(dayId, prefix, i);
+			//tempMainRow = CreateEmptyTimeCheckingRow(i, dayId);
+
+			tempMainRow.find('[idtype="inputTask"], [idtype="inputComment"], [idtype="inputTime"]').each(function(){
+				var self = $(this);
+				var id = self.attr('id');
+				if (localStorage[id]) {
+					self.val(localStorage[id]);
+				}
+			});
+
+			startTime = localStorage[prefix + dayId + '_startTime' + i + '-0'];
+
+			if (startTime) {
+				SetUp_StartTime(tempMainRow, startTime);
+			}
+
+			previous.after(tempMainRow);
+			previous = tempMainRow;
+
+			if (localStorage[prefix + dayId + '_' + i]) {
+				var subtaskCount = +localStorage[prefix + dayId + '_' + i];
+				for(var j = 1; j < subtaskCount; j++) {
+					tempSubtaskRow = CreateTimeCheckerRow(dayId, prefix, i, j);
+					//tempSubtaskRow = CreateSubtaskRow(i, j, dayId);
+
+					tempSubtaskRow.find('[idtype="inputTask"], [idtype="inputComment"], [idtype="inputTime"]').each(function(){
+						var self = $(this);
+						var id = self.attr('id');
+						if (localStorage[id]) {
+							self.val(localStorage[id]);
+						}
+					});
+
+					startTime = localStorage[prefix + dayId + '_startTime' + i + '-' + j];
+
+					if (startTime) {
+						SetUp_StartTime(tempSubtaskRow, startTime);
+					}
+
+					previous.after(tempSubtaskRow);
+					previous = tempSubtaskRow;
+				}
+				tempMainRow.attr('subtaskcount', subtaskCount);
+				tempMainRow.children('td').first().attr('rowspan', subtaskCount);
+				tempMainRow.children('td').last().attr('rowspan', subtaskCount);
+			}
+		}
+	}
+	var emptyRow = CreateTimeCheckerRow(dayId, prefix, index);
+	//var emptyRow = CreateEmptyTimeCheckingRow(index, dayId);
+	localStorage.removeItem(prefix + dayId + '_' + index);
+
+	previous.after(emptyRow);
+	var otherRow = CreateOtherRow(dayId, prefix);
+	emptyRow.after(otherRow);
+
+	return index;
 }
 
 function SetUp_StartTime(row, startTime) {
@@ -178,7 +249,7 @@ function SetTableHeightForTime() {
 		- $('header.mdl-layout__header').outerHeight(true)
 		- $('main.mdl-layout__content.content-wide span.mdl-layout-title').outerHeight(true)
 		- $('table.full-size thead').outerHeight(true)
-		- 50;
+		- 60;
 
 	var conclusion = $('div.conclusion');
 
@@ -187,10 +258,12 @@ function SetTableHeightForTime() {
 		height = height - conclusion.outerHeight(true) - 45;
 	}
 
-	//if (!isMonth)
-	//{
-	//	height = height - $('div.buttonDiv').outerHeight(true);
-	//}
+	if (!isMonth())
+	{
+		height = height
+			- $('div.buttonDiv').outerHeight(true);
+			- 20;
+	}
 
 	tbody.outerHeight(height);
 
@@ -198,6 +271,10 @@ function SetTableHeightForTime() {
 	{
 		tbody.css('height', 'auto');
 	}
+}
+
+function isMonth() {
+	return $('button.resetButton').length <= 0;
 }
 
 function GetCurrentDayId() {
@@ -603,14 +680,14 @@ function CreateSubtaskRow(taskIndex, subtaskIndex, dayId) {
 
 */
 
-function CreateTimeCheckerRow(dayId, taskIndex, subtaskIndex) {
+function CreateTimeCheckerRow(dayId, prefix, taskIndex, subtaskIndex) {
 
 	var subtaskIndex = subtaskIndex ? subtaskIndex : 0;
 
 	var inputTask = $('<input />', {
 		type: 'text',
 		idtype: 'inputTask',
-		id: dayId + '_' + 'inputTask' + taskIndex
+		id: prefix + dayId + '_' + 'inputTask' + taskIndex
 	})
 		.css({
 			width: '220px'
@@ -625,7 +702,7 @@ function CreateTimeCheckerRow(dayId, taskIndex, subtaskIndex) {
 
 	var labelStartTime = $('<label></label>', {
 		idtype: 'startTime',
-		id: dayId + '_' + 'startTime' + taskIndex + '-' + subtaskIndex
+		id: prefix + dayId + '_' + 'startTime' + taskIndex + '-' + subtaskIndex
 	});
 
 	var tdStartTime = $('<td></td>', {
@@ -641,7 +718,7 @@ function CreateTimeCheckerRow(dayId, taskIndex, subtaskIndex) {
 	var inputTime = $('<input />', {
 		type: 'text',
 		idtype: 'inputTime',
-		id: dayId + '_' + 'inputTime' + taskIndex + '-' + subtaskIndex
+		id: prefix + dayId + '_' + 'inputTime' + taskIndex + '-' + subtaskIndex
 	})
 		.css({
 			width: '70px'
@@ -652,7 +729,7 @@ function CreateTimeCheckerRow(dayId, taskIndex, subtaskIndex) {
 	var buttonTimeStart = $('<button></button>', {
 		'class': 'mdl-button mdl-js-button mdl-button--icon mdl-js-ripple-effect',
 		idtype: 'buttonTimeStart',
-		id: dayId + '_' + 'buttonTimeStart' + taskIndex + '-' + subtaskIndex
+		id: prefix + dayId + '_' + 'buttonTimeStart' + taskIndex + '-' + subtaskIndex
 	})
 		.append(iconTimeStart);
 
@@ -661,7 +738,7 @@ function CreateTimeCheckerRow(dayId, taskIndex, subtaskIndex) {
 	var buttonTimeStop = $('<button></button>', {
 		'class': 'mdl-button mdl-js-button mdl-button--icon mdl-js-ripple-effect',
 		idtype: 'buttonTimeStop',
-		id: dayId + '_' + 'buttonTimeStop' + taskIndex + '-' + subtaskIndex
+		id: prefix + dayId + '_' + 'buttonTimeStop' + taskIndex + '-' + subtaskIndex
 	})
 		.css({
 			display: 'none'
@@ -673,7 +750,7 @@ function CreateTimeCheckerRow(dayId, taskIndex, subtaskIndex) {
 		'class': 'subtaskTd'
 	}).append(inputTime);
 
-	if (dayId == GetCurrentDayId()) {
+	if (!prefix && dayId == GetCurrentDayId()) {
 		tdTime.append(buttonTimeStart, buttonTimeStop);
 	}
 
@@ -682,7 +759,7 @@ function CreateTimeCheckerRow(dayId, taskIndex, subtaskIndex) {
 	var inputComment = $('<input />', {
 		type: 'text',
 		idtype: 'inputComment',
-		id: dayId + '_' + 'inputComment' + taskIndex + '-' + subtaskIndex
+		id: prefix + dayId + '_' + 'inputComment' + taskIndex + '-' + subtaskIndex
 	})
 		.css({
 			width: '180px'
@@ -693,7 +770,7 @@ function CreateTimeCheckerRow(dayId, taskIndex, subtaskIndex) {
 	var buttonAddSubtask = $('<button></button>', {
 		'class': 'mdl-button mdl-js-button mdl-button--icon mdl-js-ripple-effect mdl-button--accent',
 		idtype: 'buttonAddSubtask',
-		id: dayId + '_' + 'buttonAddSubtask' + taskIndex + '-' + subtaskIndex
+		id: prefix + dayId + '_' + 'buttonAddSubtask' + taskIndex + '-' + subtaskIndex
 	})
 		.append(iconAddSubtask);
 
@@ -710,7 +787,7 @@ function CreateTimeCheckerRow(dayId, taskIndex, subtaskIndex) {
 	var buttonCloseSubtask = $('<button></button>', {
 		'class': 'mdl-button mdl-js-button mdl-button--icon mdl-js-ripple-effect',
 		idtype: 'buttonCloseSubtask',
-		id: dayId + '_' + 'buttonCloseSubtask' + taskIndex + '-' + subtaskIndex
+		id: prefix + dayId + '_' + 'buttonCloseSubtask' + taskIndex + '-' + subtaskIndex
 	})
 		.append(iconCloseSubtask);
 
@@ -726,7 +803,7 @@ function CreateTimeCheckerRow(dayId, taskIndex, subtaskIndex) {
 	var buttonDeleteTask = $('<button></button>', {
 		'class': 'mdl-button mdl-js-button mdl-button--icon mdl-js-ripple-effect',
 		idtype: 'buttonDeleteTask',
-		id: dayId + '_' + 'buttonDeleteTask' + taskIndex
+		id: prefix + dayId + '_' + 'buttonDeleteTask' + taskIndex
 	})
 		.append(iconDeleteTask);
 
@@ -745,7 +822,7 @@ function CreateTimeCheckerRow(dayId, taskIndex, subtaskIndex) {
 			dayid: dayId,
 			taskindex: taskIndex,
 			subtaskIndex: subtaskIndex,
-			id: dayId + '_' + 'trTimeChecker' + taskIndex + '-' + subtaskIndex
+			id: prefix + dayId + '_' + 'trTimeChecker' + taskIndex + '-' + subtaskIndex
 		})
 			.append(tdStartTime, tdTime, tdComment, tdCloseSubtask);
 
@@ -756,7 +833,7 @@ function CreateTimeCheckerRow(dayId, taskIndex, subtaskIndex) {
 			dayid: dayId,
 			subtaskcount: 1,
 			taskindex: taskIndex,
-			id: dayId + '_' + 'trTimeChecker' + taskIndex
+			id: prefix + dayId + '_' + 'trTimeChecker' + taskIndex
 		})
 			.append(tdTask, tdStartTime, tdTime, tdComment, tdCloseSubtask, tdDeleteTask);
 	}
@@ -770,14 +847,14 @@ function CreateTimeCheckerRow(dayId, taskIndex, subtaskIndex) {
 	return tr;
 }
 
-function CreateHeaderRow(dayId) {
+function CreateHeaderRow(dayId, prefix) {
 
 	var tdTask = $('<td></td>', {
 		colspan: 2
-	}).append('Task name');
+	}).append('Task');
 
 	var tdTime = $('<td></td>', {
-	}).append('Spent time');
+	}).append('Spent time <br>(hh:mm)');
 
 	var tdComment = $('<td></td>', {
 		colspan: 2
@@ -795,11 +872,11 @@ function CreateHeaderRow(dayId) {
 		'class': 'header',
 		idtype: 'header',
 		dayid: dayId,
-		id: dayId + '_header'
+		id: prefix + dayId + '_header'
 	}).append(tdTask, tdTime, tdComment, tdDeleteSubtask, tdDeleteTask);
 }
 
-function CreateOtherRow(dayId) {
+function CreateOtherRow(dayId, prefix) {
 
 	var labelTask = $('<label></label>', {
 		idtype: 'labelTask',
@@ -839,7 +916,7 @@ function CreateOtherRow(dayId) {
 		idtype: 'other',
 		dayid: dayId,
 		taskindex: 'other',
-		id: dayId + '_other'
+		id: prefix + dayId + '_other'
 	})
 	.append(tdTask, tdTime, tdComment);
 }
@@ -848,9 +925,10 @@ function CreateOtherRow(dayId) {
  * @return {string}
  */
 function GetTimeForOtherLabel(dayId) {
+	var prefix = GetCurrentMonthAndYearPrefix();
 	var reportTime = $('#' + dayId).find('td.time').last().find('span.usualTime').text();
 
-	var inputs = $('[idtype=inputTime][id^=' + dayId + '_]').toArray();
+	var inputs = $('[idtype=inputTime][id^="' + prefix + dayId + '_"]').toArray();
 	var times = inputs.map(
 		function(input) {
 			if ($(input).val())
@@ -874,23 +952,25 @@ function GetTimeForOtherLabel(dayId) {
 }
 
 function CheckRowsNumber(lastRowIndex, dayId) {
-	if (CheckIfAnyInputHasVal(dayId, lastRowIndex) && $('#' + dayId + '_' + 'trTimeChecker' + (lastRowIndex + 1)).length <= 0)
+	var prefix = GetCurrentMonthAndYearPrefix();
+
+	if (CheckIfAnyInputHasVal(dayId, prefix, lastRowIndex) && $('#' + prefix + dayId + '_' + 'trTimeChecker' + (lastRowIndex + 1)).length <= 0)
 	{
-		var selector = '#' + dayId + '_' + 'trTimeChecker' + lastRowIndex;
+		var selector = '#' + prefix + dayId + '_' + 'trTimeChecker' + lastRowIndex;
 		var lastSubtaskIndex = +$(selector).attr('subtaskcount') - 1;
 		if (lastSubtaskIndex != 0) {
 			selector += '-' + lastSubtaskIndex;
 		}
-		$(selector).after(CreateTimeCheckerRow(dayId, ++lastRowIndex));
+		$(selector).after(CreateTimeCheckerRow(dayId, prefix, ++lastRowIndex));
 		//$(selector).after(CreateEmptyTimeCheckingRow(++lastRowIndex, dayId));
 	} else {
 		for (var i = 0; i < lastRowIndex; i++) {
-			var currentRow = $('#' + dayId + '_' + 'trTimeChecker' + i);
+			var currentRow = $('#' + prefix + dayId + '_' + 'trTimeChecker' + i);
 			if (!currentRow) continue;
 
-			if (!CheckIfAnyInputHasVal(dayId, i)) {
+			if (!CheckIfAnyInputHasVal(dayId, prefix, i)) {
 				ClearLocalStorageInputValueForRow(currentRow);
-				localStorage.removeItem(dayId + '_' + i);
+				localStorage.removeItem(prefix + dayId + '_' + i);
 				$('[dayid=' + dayId + '][taskindex=' + i + ']').remove();
 
 			}
@@ -903,30 +983,34 @@ function CheckRowsNumber(lastRowIndex, dayId) {
 /**
  * @return {boolean}
  */
-function CheckIfAnyInputHasVal(dayId, taskIndex) {
-	var subtaskCount = $('#' + dayId + '_' + 'trTimeChecker' + taskIndex).attr('subtaskcount');
+function CheckIfAnyInputHasVal(dayId, prefix, taskIndex) {
+	var subtaskCount = $('#' + prefix + dayId + '_' + 'trTimeChecker' + taskIndex).attr('subtaskcount');
 
-	var isAnyInputHasVal = ($('#' + dayId + '_' + 'inputTask' + taskIndex).val() != '');
+	var isAnyInputHasVal = ($('#' + prefix + dayId + '_' + 'inputTask' + taskIndex).val() != '');
 
 	for (var i = 0; i < subtaskCount; i++) {
-		var label = $('#' + dayId + '_' + 'startTime' + taskIndex + '-' + i);
+		var label = $('#' + prefix + dayId + '_' + 'startTime' + taskIndex + '-' + i);
 		var labelText = label.text();
 		isAnyInputHasVal = isAnyInputHasVal
 			|| (labelText != '')
-			|| ($('#' + dayId + '_' + 'inputComment' + taskIndex + '-' + i).val() != '')
-			|| ($('#' + dayId + '_' + 'inputTime' + taskIndex + '-' + i).val() != '');
+			|| ($('#' + prefix + dayId + '_' + 'inputComment' + taskIndex + '-' + i).val() != '')
+			|| ($('#' + prefix + dayId + '_' + 'inputTime' + taskIndex + '-' + i).val() != '');
 	}
 
 	return isAnyInputHasVal;
 }
 
-function ClearLocalStorageInputValueForRow(row) {
+function ClearLocalStorageInputValueForRow(row, shouldTaskBeCleared) {
 	row.find('[idtype="inputTask"], [idtype="inputComment"], [idtype="inputTime"], [idtype="startTime"]')
 	.each(
 		function() {
 			var self = $(this);
-			if (self.is('input')) {
+			if (self.attr('idtype') == 'inputTask' && shouldTaskBeCleared)
 				self.val('');
+			if (self.is('input')) {
+				if (((self.attr('idtype') == 'inputTask') && shouldTaskBeCleared) || (self.attr('idtype') != 'inputTask')) {
+					self.val('');
+				}
 			} else {
 				self.text('');
 			}
@@ -941,6 +1025,7 @@ function ClearLocalStorageInputValueForRow(row) {
  */
 function RecountIds(dayId) {
 	var rowsIndex = 0;
+	var prefix = GetCurrentMonthAndYearPrefix();
 
 	$('.task[idtype="trTimeChecker"][dayid=' + dayId + ']').each(
 		function() {
@@ -952,7 +1037,7 @@ function RecountIds(dayId) {
 				var item = $(this);
 				var oldId = item.attr('id');
 				var idType = item.attr('idtype');
-				var id = dayId + '_' + idType + rowsIndex;
+				var id = prefix + dayId + '_' + idType + rowsIndex;
 				if (item.parent().hasClass('subtaskTd')) {
 					id += '-0';
 				}
@@ -965,8 +1050,14 @@ function RecountIds(dayId) {
 			});
 
 			var oldTaskIndex = row.attr('taskindex');
+			var oldSubtaskCountId = prefix + dayId + '_' + oldTaskIndex;
+			var newSubtaskCountId = prefix + dayId + '_' + rowsIndex;
+			if (localStorage[oldSubtaskCountId] && oldSubtaskCountId != newSubtaskCountId) {
+				localStorage[newSubtaskCountId] = localStorage[oldSubtaskCountId];
+				localStorage.removeItem(oldSubtaskCountId);
+			}
 
-			row.attr('id', dayId + '_' + 'trTimeChecker' + rowsIndex);
+			row.attr('id', prefix + dayId + '_' + 'trTimeChecker' + rowsIndex);
 			row.attr('taskindex', rowsIndex);
 			var subtaskCount = $(this).attr('subtaskcount');
 			for (var i = 1; i < subtaskCount; i++) {
@@ -986,13 +1077,14 @@ function RecountIds(dayId) {
 function RecountIdsForSubtasksRows(taskIndex, dayId, newTaskIndex) {
 	var subtaskIndex = 0;
 	var realIndex = (newTaskIndex === undefined) ? taskIndex : newTaskIndex;
+	var prefix = GetCurrentMonthAndYearPrefix();
 
 	$('[dayid=' + dayId + '][idtype=trTimeChecker][taskindex=' + taskIndex + ']').each(
 		function() {
 			$(this).find('.subtaskTd [idtype]').each(function() {
 				var oldId = $(this).attr('id');
 				var idType = $(this).attr('idtype');
-				var id = dayId + '_' + idType + realIndex + '-' + subtaskIndex;
+				var id = prefix + dayId + '_' + idType + realIndex + '-' + subtaskIndex;
 				$(this).attr('id', id);
 
 				if ($(this).is('input') && localStorage[oldId] && oldId != id) {
@@ -1004,7 +1096,7 @@ function RecountIdsForSubtasksRows(taskIndex, dayId, newTaskIndex) {
 			$(this).attr('taskindex', realIndex);
 
 			if ($(this).hasClass('subtask')) {
-				$(this).attr('id', dayId + '_' + 'trTimeChecker' + realIndex + '-' + subtaskIndex);
+				$(this).attr('id', prefix + dayId + '_' + 'trTimeChecker' + realIndex + '-' + subtaskIndex);
 				$(this).attr('subtaskindex', subtaskIndex);
 			}
 
@@ -1015,8 +1107,8 @@ function RecountIdsForSubtasksRows(taskIndex, dayId, newTaskIndex) {
 	return subtaskIndex;
 }
 
-function ShiftSubtask(taskIndex, dayId) {
-	var mainRow = $('#' + dayId + '_' + 'trTimeChecker' + taskIndex);
+function ShiftSubtask(taskIndex, dayId, prefix) {
+	var mainRow = $('#' + prefix + dayId + '_' + 'trTimeChecker' + taskIndex);
 	var subtaskCount = mainRow.attr('subtaskcount');
 	var previousRow = mainRow;
 
@@ -1024,7 +1116,7 @@ function ShiftSubtask(taskIndex, dayId) {
 
 	for (var i = 1; i < subtaskCount; i++) {
 
-		var currentRow = $('#' + dayId + '_' + 'trTimeChecker' + taskIndex + '-' + i);
+		var currentRow = $('#' + prefix + dayId + '_' + 'trTimeChecker' + taskIndex + '-' + i);
 		var previousSubtaskTds = previousRow.find('td.subtaskTd');
 		currentRow.find('td.subtaskTd').each(function(index) {
 			var previousInput = $(previousSubtaskTds[index]).children('input');
@@ -1053,11 +1145,30 @@ function ShiftSubtask(taskIndex, dayId) {
 
 
 $(document).ready ( function() {
+	var prefix = GetCurrentMonthAndYearPrefix();
+	
+	var prefixIndex = prefix.indexOf('_');
+	var prefixMonth = prefix.substr(0, prefixIndex);
+	var prefixYear = prefix.substr(prefixIndex + 1, 4)
 
+	var date = new Date();
+	var month = date.getMonth() + 1;
+	var year = date.getFullYear();
+	
+	var previous = new Date();
+	previous.setDate(1);
+	previous.setMonth(previous.getMonth()-1);
+	
+	var previousMonth = previous.getMonth() + 1;
+	var previousYear = previous.getFullYear();
+
+	if(prefix && !((year == prefixYear && month == prefixMonth) || (previousYear == prefixYear && previousMonth == prefixMonth))) {
+		return;
+	}	
+	
 	CreateCurrentDayButton();
 	var rowsIndex = SetUpInitialState();
 	SetTableHeightForTime();
-
 
 	$(document).on('propertychange input change keyup paste', '[idtype="inputTask"], [idtype="inputComment"], [idtype="inputTime"]',
 		function()
@@ -1067,12 +1178,16 @@ $(document).ready ( function() {
 			var mainTr = $(this).parent().parent();
 			var dayId = mainTr.attr('dayid');
 			console.log(rowsIndex);
-			console.log(rowsIndex[dayId]);
-			rowsIndex[dayId] = CheckRowsNumber(rowsIndex[dayId], dayId);
-			rowsIndex[dayId] = RecountIds(dayId);
-			localStorage[dayId] = rowsIndex[dayId];
+			console.log(rowsIndex[prefix + dayId]);
+			rowsIndex[prefix + dayId] = CheckRowsNumber(rowsIndex[prefix + dayId], dayId);
+			rowsIndex[prefix + dayId] = RecountIds(dayId);
+			if (rowsIndex[prefix + dayId]) {
+				localStorage[prefix + dayId] = rowsIndex[prefix + dayId];
+			} else {
+				localStorage.removeItem(prefix + dayId);
+			}
 
-			$('#' + dayId + '_other_labelTime').text(GetTimeForOtherLabel(dayId));
+			$('#' + prefix + dayId + '_other_labelTime').text(GetTimeForOtherLabel(dayId));
 			SetTableHeightForTime();
 		}
 	);
@@ -1095,21 +1210,25 @@ $(document).ready ( function() {
 			mainTr.attr('subtaskcount', 1);
 
 			ClearLocalStorageInputValueForRow(mainTr);
-			localStorage.removeItem(dayId + '_' + taskIndex);
+			localStorage.removeItem(prefix + dayId + '_' + taskIndex);
 
-			if (rowsIndex[dayId] == 0) {
+			if (rowsIndex[prefix + dayId] == 0) {
 				SetTableHeightForTime();
 				return;
 			}
 
 			mainTr.remove();
 
-			//rowsIndex[dayId] = RecountIds(dayId);
-			rowsIndex[dayId] = CheckRowsNumber(rowsIndex[dayId], dayId);
-			rowsIndex[dayId] = RecountIds(dayId);
-			localStorage[dayId] = rowsIndex[dayId];
+			//rowsIndex[prefix + dayId] = RecountIds(dayId);
+			rowsIndex[prefix + dayId] = CheckRowsNumber(rowsIndex[prefix + dayId], dayId);
+			rowsIndex[prefix + dayId] = RecountIds(dayId);
+			if (rowsIndex[prefix + dayId]) {
+				localStorage[prefix + dayId] = rowsIndex[prefix + dayId];
+			} else {
+				localStorage.removeItem(prefix + dayId);
+			}
 
-			$('#' + dayId + '_other_labelTime').text(GetTimeForOtherLabel(dayId));
+			$('#' + prefix + dayId + '_other_labelTime').text(GetTimeForOtherLabel(dayId));
 			SetTableHeightForTime();
 		}
 	);
@@ -1120,9 +1239,9 @@ $(document).ready ( function() {
 			var dayId = tr.attr('dayid');
 			var taskIndex = +tr.attr('taskindex');
 
-			var mainRow = $('#' + dayId + '_' + 'trTimeChecker' + taskIndex);
+			var mainRow = $('#' + prefix + dayId + '_' + 'trTimeChecker' + taskIndex);
 			var newSubtaskIndex = +mainRow.attr('subtaskcount');
-			tr.after(CreateTimeCheckerRow(dayId, taskIndex, newSubtaskIndex));
+			tr.after(CreateTimeCheckerRow(dayId, prefix, taskIndex, newSubtaskIndex));
 			//tr.after(CreateSubtaskRow(taskIndex, newSubtaskIndex, dayId));
 
 			var subtaskCount = newSubtaskIndex + 1;
@@ -1130,7 +1249,7 @@ $(document).ready ( function() {
 			mainRow.attr('subtaskcount', subtaskCount);
 			mainRow.children('td').first().attr('rowspan', subtaskCount);
 			mainRow.children('td').last().attr('rowspan', subtaskCount);
-			localStorage[dayId + '_' + taskIndex] = subtaskCount;
+			localStorage[prefix + dayId + '_' + taskIndex] = subtaskCount;
 
 			RecountIdsForSubtasksRows(taskIndex, dayId);
 
@@ -1144,27 +1263,30 @@ $(document).ready ( function() {
 			var dayId = currentRow.attr('dayid');
 			var taskIndex = currentRow.attr('taskindex');
 
-			var mainRow = $('#' + dayId + '_' + 'trTimeChecker' + taskIndex);
+			var mainRow = $('#' + prefix + dayId + '_' + 'trTimeChecker' + taskIndex);
 
-			//currentRow.find('[idtype="inputComment"], [idtype="inputTime"]').val("");
-			ClearLocalStorageInputValueForRow(currentRow);
+			currentRow.find('[idtype="inputComment"], [idtype="inputTime"]').val("");
+			currentRow.find('[idtype="inputComment"], [idtype="inputTime"]').val("");
+			//ClearLocalStorageInputValueForRow(currentRow);
 
 			var subtaskCount = +mainRow.attr('subtaskcount');
 
-			var otherLine = $('#' + dayId + '_other_labelTime');
+			var otherLine = $('#' + prefix + dayId + '_other_labelTime');
 
 			if (subtaskCount == 1) {
-				rowsIndex[dayId] = CheckRowsNumber(rowsIndex[dayId], dayId);
-				rowsIndex[dayId] = RecountIds(dayId);
-				localStorage[dayId] = rowsIndex[dayId];
+				rowsIndex[prefix + dayId] = CheckRowsNumber(rowsIndex[prefix + dayId], dayId);
+				rowsIndex[prefix + dayId] = RecountIds(dayId);
+				if (rowsIndex[prefix + dayId]) {
+					localStorage[prefix + dayId] = rowsIndex[prefix + dayId];
+				}
 
 				otherLine.text(GetTimeForOtherLabel(dayId));
 				SetTableHeightForTime();
 				return;
 			}
 
-			if (currentRow.attr('id') == dayId + '_' + 'trTimeChecker' + taskIndex) {
-				ShiftSubtask(taskIndex, dayId);
+			if (currentRow.attr('id') == (prefix + dayId + '_' + 'trTimeChecker' + taskIndex)) {
+				ShiftSubtask(taskIndex, dayId, prefix);
 			} else {
 				currentRow.remove();
 			}
@@ -1174,13 +1296,17 @@ $(document).ready ( function() {
 			mainRow.attr('subtaskcount', newSubtaskCount);
 			mainRow.children('td').first().attr('rowspan', newSubtaskCount);
 			mainRow.children('td').last().attr('rowspan', newSubtaskCount);
-			localStorage[dayId + '_' + taskIndex] = newSubtaskCount;
+			localStorage[prefix + dayId + '_' + taskIndex] = newSubtaskCount;
 
 			RecountIdsForSubtasksRows(+taskIndex, dayId);
 
-			rowsIndex[dayId] = CheckRowsNumber(rowsIndex[dayId], dayId);
-			rowsIndex[dayId] = RecountIds(dayId);
-			localStorage[dayId] = rowsIndex[dayId];
+			rowsIndex[prefix + dayId] = CheckRowsNumber(rowsIndex[prefix + dayId], dayId);
+			rowsIndex[prefix + dayId] = RecountIds(dayId);
+			if (rowsIndex[prefix + dayId]) {
+				localStorage[prefix + dayId] = rowsIndex[prefix + dayId];
+			} else {
+				localStorage.removeItem(prefix + dayId);
+			}
 
 			otherLine.text(GetTimeForOtherLabel(dayId));
 			SetTableHeightForTime();
@@ -1201,16 +1327,20 @@ $(document).ready ( function() {
 			var taskIndex = mainRow.attr('taskindex');
 			var subtaskIndex = mainRow.attr('subtaskindex') ? mainRow.attr('subtaskindex') : 0;
 
-			localStorage[dayId + '_' + 'startTime' + taskIndex + '-' + subtaskIndex] = time;
+			localStorage[prefix + dayId + '_' + 'startTime' + taskIndex + '-' + subtaskIndex] = time;
 
 			$(this).hide();
 			var stopId = '#' + $(this).attr('id').replace('Start', 'Stop');
 			$(stopId).show();
 			mainRow.addClass('inProgress');
 
-			rowsIndex[dayId] = CheckRowsNumber(rowsIndex[dayId], dayId);
-			rowsIndex[dayId] = RecountIds(dayId);
-			localStorage[dayId] = rowsIndex[dayId];
+			rowsIndex[prefix + dayId] = CheckRowsNumber(rowsIndex[prefix + dayId], dayId);
+			rowsIndex[prefix + dayId] = RecountIds(dayId);
+			if (rowsIndex[prefix + dayId]) {
+				localStorage[prefix + dayId] = rowsIndex[prefix + dayId];
+			} else {
+				localStorage.removeItem(prefix + dayId);
+			}
 
 			SetTableHeightForTime();
 		}
@@ -1242,14 +1372,18 @@ $(document).ready ( function() {
 			$(startId).show();
 			mainRow.removeClass('inProgress');
 
-			localStorage.removeItem(dayId + '_' + 'startTime' + taskIndex + '-' + subtaskIndex);
+			localStorage.removeItem(prefix + dayId + '_' + 'startTime' + taskIndex + '-' + subtaskIndex);
 			startTime.text('');
 
-			$('#' + dayId + '_other_labelTime').text(GetTimeForOtherLabel(dayId));
+			$('#' + prefix + dayId + '_other_labelTime').text(GetTimeForOtherLabel(dayId));
 
-			rowsIndex[dayId] = CheckRowsNumber(rowsIndex[dayId], dayId);
-			rowsIndex[dayId] = RecountIds(dayId);
-			localStorage[dayId] = rowsIndex[dayId];
+			rowsIndex[prefix + dayId] = CheckRowsNumber(rowsIndex[prefix + dayId], dayId);
+			rowsIndex[prefix + dayId] = RecountIds(dayId);
+			if (rowsIndex[prefix + dayId]) {
+				localStorage[prefix + dayId] = rowsIndex[prefix + dayId];
+			} else {
+				localStorage.removeItem(prefix + dayId);
+			}
 
 			SetTableHeightForTime();
 		}
@@ -1257,12 +1391,16 @@ $(document).ready ( function() {
 
 	$(document).on('click', 'tr[id]:not(.future):not(.trTimeChecker):not(.other):not(.header)',
 		function (){
-			var dayId = $(this).attr('id');
+			var currentRow = $(this);
+			var dayId = currentRow.attr('id');
 
-			if ($(this).next().is(':visible')) {
+			if (currentRow.next().is(':visible')) {
 				$('[dayid=' + dayId + ']').hide();
+				currentRow.removeClass('timesheetOpened');
+
 			} else {
 				$('[dayid=' + dayId + ']').show();
+				currentRow.addClass('timesheetOpened');
 			}
 
 			SetTableHeightForTime();
@@ -1280,16 +1418,33 @@ $(document).ready ( function() {
 				$('.other').hide();
 				$('.header').hide();
 
+				var dayId = GetCurrentDayId();
+				$('#' + dayId).first().removeClass('timesheetOpened');
+
 			} else {
 				$(this).addClass('mdl-button--raised mdl-button--accent');
 				var dayId = GetCurrentDayId();
 
 				$('tr.intervalRow, tr[id]').hide();
 				$('#' + dayId + ', [dayid=' + dayId + ']').show();
+
+				$('tr[id]:not(.future):not(.trTimeChecker):not(.other):not(.header)').removeClass('timesheetOpened');
+				$('#' + dayId).first().addClass('timesheetOpened');
+
 			}
 			
 			SetTableHeightForTime();
 		}
 	);
-	
+
+	$(document).on('click', '.intervalRow, button.resetButton',
+		function (){
+			$('.trTimeChecker').hide();
+			$('.other').hide();
+			$('.header').hide();
+
+			$('.timesheetOpened').removeClass('timesheetOpened');
+		}
+	);
+
 });

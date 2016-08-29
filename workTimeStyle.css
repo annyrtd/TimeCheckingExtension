@@ -34,3 +34,11 @@ tr.trTimeChecker.inProgress td.subtaskTd {
 tr.trTimeChecker.inProgress:hover td.subtaskTd {
     background-color: rgba(255, 171, 64, 0.4) !important;
 }
+
+tr.timesheetOpened td, tr.timesheetOpened:hover td{
+    background-color: rgba(96, 125, 139, 0.33) !important;
+}
+
+div.barrier {
+    height: 1px;
+}
